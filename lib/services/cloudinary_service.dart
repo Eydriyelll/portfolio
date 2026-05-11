@@ -5,113 +5,54 @@ import 'package:http/http.dart' as http;
 class CloudinaryService {
   static const String cloudName = 'diut63biv';
   static const String uploadPreset = 'hc6sufp9';
-  static const String apiKey = '157969599811352';
   static const String folder = 'portfolio/photography';
-  static const String galleryTag = 'adriel_portfolio';
+
+  // JSONBin config — stores the photo list publicly
+  static const String _binId = '6a01ae21c0954111d8082ac1';
+  static const String _binApiKey = r'$2a$10$7LdDa9wHzSD2xHOZwv85yO5lJcpQJwBrkfCQNwWmwwevqjGKpt07q';
+  static const String _binUrl = 'https://api.jsonbin.io/v3/b/$_binId';
 
   static String get uploadUrl =>
       'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 
-  /// Primary fetch: folder-based using API key (no secret needed for GET)
+  // ─── FETCH ───────────────────────────────────────────────
   static Future<List<CloudinaryPhoto>> fetchPhotos() async {
-    // Try 3 methods in order until one works
-    final photos = await _fetchByFolder() ??
-        await _fetchByTag() ??
-        [];
-    return photos;
-  }
-
-  /// Method 1: fetch by folder path using Admin API (read-only, API key only)
-  static Future<List<CloudinaryPhoto>?> _fetchByFolder() async {
     try {
-      final credentials = base64Encode(utf8.encode('$apiKey:'));
-      // Use folder as prefix for resource listing
-      final uri = Uri.parse(
-        'https://api.cloudinary.com/v1_1/$cloudName/resources/image'
-        '?asset_folder=$folder&max_results=100&type=upload',
-      );
       final response = await http.get(
-        uri,
-        headers: {'Authorization': 'Basic $credentials'},
+        Uri.parse('$_binUrl/latest'),
+        headers: {
+          'X-Master-Key': _binApiKey,
+          'X-Bin-Meta': 'false',
+        },
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final resources = data['resources'] as List<dynamic>? ?? [];
-        if (resources.isNotEmpty) {
-          final photos = resources
-              .map((r) => CloudinaryPhoto.fromAdminJson(r))
-              .toList();
-          photos.sort((a, b) => (b.createdAt ?? DateTime(0))
-              .compareTo(a.createdAt ?? DateTime(0)));
-          return photos;
-        }
+        final photos = (data['photos'] as List<dynamic>? ?? [])
+            .map((p) => CloudinaryPhoto.fromJson(p))
+            .toList();
+        // Newest first
+        photos.sort((a, b) =>
+            (b.uploadedAt ?? DateTime(0)).compareTo(a.uploadedAt ?? DateTime(0)));
+        return photos;
       }
-
-      // Also try with 'prefix' param (older Cloudinary accounts)
-      final uri2 = Uri.parse(
-        'https://api.cloudinary.com/v1_1/$cloudName/resources/image'
-        '?prefix=$folder&max_results=100&type=upload',
-      );
-      final response2 = await http.get(
-        uri2,
-        headers: {'Authorization': 'Basic $credentials'},
-      );
-      if (response2.statusCode == 200) {
-        final data = jsonDecode(response2.body);
-        final resources = data['resources'] as List<dynamic>? ?? [];
-        if (resources.isNotEmpty) {
-          final photos = resources
-              .map((r) => CloudinaryPhoto.fromAdminJson(r))
-              .toList();
-          photos.sort((a, b) => (b.createdAt ?? DateTime(0))
-              .compareTo(a.createdAt ?? DateTime(0)));
-          return photos;
-        }
-      }
-      return null;
+      return [];
     } catch (e) {
-      return null;
+      return [];
     }
   }
 
-  /// Method 2: fetch by tag (fallback)
-  static Future<List<CloudinaryPhoto>?> _fetchByTag() async {
-    try {
-      final uri = Uri.parse(
-        'https://res.cloudinary.com/$cloudName/image/list/$galleryTag.json',
-      );
-      final response = await http.get(uri);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final resources = data['resources'] as List<dynamic>? ?? [];
-        if (resources.isNotEmpty) {
-          final photos = resources
-              .map((r) => CloudinaryPhoto.fromListJson(r))
-              .toList();
-          photos.sort((a, b) => (b.createdAt ?? DateTime(0))
-              .compareTo(a.createdAt ?? DateTime(0)));
-          return photos;
-        }
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Upload photo — tags it AND puts it in folder so both fetch methods work
+  // ─── UPLOAD ──────────────────────────────────────────────
   static Future<CloudinaryUploadResult> uploadPhoto({
     required Uint8List bytes,
     required String fileName,
     required String mimeType,
   }) async {
     try {
-      final uri = Uri.parse(uploadUrl);
-      final request = http.MultipartRequest('POST', uri);
+      // 1. Upload to Cloudinary
+      final request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
       request.fields['upload_preset'] = uploadPreset;
       request.fields['folder'] = folder;
-      request.fields['tags'] = galleryTag;
       request.fields['resource_type'] = 'image';
       request.files.add(
         http.MultipartFile.fromBytes('file', bytes, filename: fileName),
@@ -120,14 +61,7 @@ class CloudinaryService {
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return CloudinaryUploadResult(
-          success: true,
-          url: data['secure_url'],
-          publicId: data['public_id'],
-        );
-      } else {
+      if (response.statusCode != 200) {
         String msg = 'Upload failed (${response.statusCode})';
         try {
           final err = jsonDecode(response.body);
@@ -135,11 +69,99 @@ class CloudinaryService {
         } catch (_) {}
         return CloudinaryUploadResult(success: false, error: msg);
       }
+
+      final data = jsonDecode(response.body);
+      final publicId = data['public_id'] as String;
+      final secureUrl = data['secure_url'] as String;
+      final width = data['width'] as int?;
+      final height = data['height'] as int?;
+      final bytes2 = data['bytes'] as int?;
+
+      // 2. Save to JSONBin
+      await _addPhotoToList(CloudinaryPhoto(
+        publicId: publicId,
+        url: secureUrl,
+        width: width,
+        height: height,
+        bytes: bytes2,
+        fileName: fileName,
+        uploadedAt: DateTime.now(),
+      ));
+
+      return CloudinaryUploadResult(
+        success: true,
+        url: secureUrl,
+        publicId: publicId,
+      );
     } catch (e) {
       return CloudinaryUploadResult(success: false, error: e.toString());
     }
   }
 
+  // ─── SAVE TO JSONBIN ─────────────────────────────────────
+  static Future<void> _addPhotoToList(CloudinaryPhoto newPhoto) async {
+    try {
+      // Get current list
+      final getRes = await http.get(
+        Uri.parse('$_binUrl/latest'),
+        headers: {
+          'X-Master-Key': _binApiKey,
+          'X-Bin-Meta': 'false',
+        },
+      );
+
+      List<dynamic> currentPhotos = [];
+      if (getRes.statusCode == 200) {
+        final data = jsonDecode(getRes.body);
+        currentPhotos = List<dynamic>.from(data['photos'] ?? []);
+      }
+
+      // Add new photo at the front
+      currentPhotos.insert(0, newPhoto.toJson());
+
+      // Update JSONBin
+      await http.put(
+        Uri.parse(_binUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': _binApiKey,
+        },
+        body: jsonEncode({'photos': currentPhotos}),
+      );
+    } catch (_) {
+      // Silent fail — photo is still on Cloudinary
+    }
+  }
+
+  // ─── DELETE FROM JSONBIN ──────────────────────────────────
+  static Future<void> removePhotoFromList(String publicId) async {
+    try {
+      final getRes = await http.get(
+        Uri.parse('$_binUrl/latest'),
+        headers: {
+          'X-Master-Key': _binApiKey,
+          'X-Bin-Meta': 'false',
+        },
+      );
+
+      if (getRes.statusCode == 200) {
+        final data = jsonDecode(getRes.body);
+        final photos = List<dynamic>.from(data['photos'] ?? [])
+          ..removeWhere((p) => p['publicId'] == publicId);
+
+        await http.put(
+          Uri.parse(_binUrl),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': _binApiKey,
+          },
+          body: jsonEncode({'photos': photos}),
+        );
+      }
+    } catch (_) {}
+  }
+
+  // ─── HELPERS ─────────────────────────────────────────────
   static String getThumbnailUrl(String publicId, {int width = 600}) {
     return 'https://res.cloudinary.com/$cloudName/image/upload'
         '/w_$width,c_limit,q_auto/$publicId';
@@ -150,57 +172,54 @@ class CloudinaryService {
   }
 }
 
+// ─── MODELS ──────────────────────────────────────────────────
 class CloudinaryPhoto {
   final String publicId;
   final String url;
-  final String? displayName;
   final int? width;
   final int? height;
   final int? bytes;
-  final DateTime? createdAt;
+  final String? fileName;
+  final DateTime? uploadedAt;
 
   CloudinaryPhoto({
     required this.publicId,
     required this.url,
-    this.displayName,
     this.width,
     this.height,
     this.bytes,
-    this.createdAt,
+    this.fileName,
+    this.uploadedAt,
   });
 
-  factory CloudinaryPhoto.fromAdminJson(Map<String, dynamic> json) {
-    final publicId = json['public_id'] as String;
+  factory CloudinaryPhoto.fromJson(Map<String, dynamic> json) {
     return CloudinaryPhoto(
-      publicId: publicId,
-      url: json['secure_url'] ?? CloudinaryService.getOriginalUrl(publicId),
+      publicId: json['publicId'] as String,
+      url: json['url'] as String,
       width: json['width'] as int?,
       height: json['height'] as int?,
       bytes: json['bytes'] as int?,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'])
+      fileName: json['fileName'] as String?,
+      uploadedAt: json['uploadedAt'] != null
+          ? DateTime.tryParse(json['uploadedAt'])
           : null,
     );
   }
 
-  factory CloudinaryPhoto.fromListJson(Map<String, dynamic> json) {
-    final publicId = json['public_id'] as String;
-    return CloudinaryPhoto(
-      publicId: publicId,
-      url: CloudinaryService.getOriginalUrl(publicId),
-      width: json['width'] as int?,
-      height: json['height'] as int?,
-      bytes: json['bytes'] as int?,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'])
-          : null,
-    );
-  }
+  Map<String, dynamic> toJson() => {
+        'publicId': publicId,
+        'url': url,
+        'width': width,
+        'height': height,
+        'bytes': bytes,
+        'fileName': fileName,
+        'uploadedAt': uploadedAt?.toIso8601String(),
+      };
 
   String get thumbnailUrl =>
       CloudinaryService.getThumbnailUrl(publicId, width: 600);
 
-  String get name => displayName ?? publicId.split('/').last;
+  String get name => fileName ?? publicId.split('/').last;
 }
 
 class CloudinaryUploadResult {

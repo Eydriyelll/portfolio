@@ -73,113 +73,68 @@ class _HeroPhotoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height ?? 420,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.border),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(3),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Profile photo
-            Image.asset(
+    final isMobile = MediaQuery.of(context).size.width < 768;
+    final avatarSize = isMobile ? 200.0 : 260.0;
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Circle avatar with border
+        Container(
+          width: avatarSize,
+          height: avatarSize,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: AppTheme.border, width: 1.5),
+          ),
+          child: ClipOval(
+            child: Image.asset(
               'assets/images/profile.jpg',
               fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
+              // Show face — slightly center-up crop
+              alignment: const Alignment(0, -0.2),
             ),
-            // Gradient overlay bottom
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 140,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      AppTheme.black.withOpacity(0.92),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Corner dots
-            ..._cornerDots(),
-            // Status badge
-            Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppTheme.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppTheme.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF4ADE80),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'Open to opportunities',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.grey,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+
+        const SizedBox(height: 24),
+
+        // Status badge below avatar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4ADE80),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Open to opportunities',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.grey,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     )
         .animate()
         .fadeIn(delay: 200.ms, duration: 800.ms)
         .slideX(begin: 0.15, end: 0);
-  }
-
-  List<Widget> _cornerDots() {
-    const color = AppTheme.greyDark;
-    const size = 5.0;
-    return [
-      Positioned(top: 12, left: 12, child: _Dot(color: color, size: size)),
-      Positioned(top: 12, right: 12, child: _Dot(color: color, size: size)),
-      Positioned(bottom: 12, left: 12, child: _Dot(color: color, size: size)),
-      Positioned(bottom: 12, right: 12, child: _Dot(color: color, size: size)),
-    ];
-  }
-}
-
-class _Dot extends StatelessWidget {
-  final Color color;
-  final double size;
-  const _Dot({required this.color, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
   }
 }
 

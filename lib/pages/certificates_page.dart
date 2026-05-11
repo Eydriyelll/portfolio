@@ -7,19 +7,19 @@ class CertificatesPage extends StatelessWidget {
 
   static const Map<String, List<Map<String, String>>> _certs = {
     'MMCL — Mapúa Malayan Colleges Laguna': [
-      {'name': 'Special Award in Sports (E-sports)', 'year': '2025'},
-      {'name': 'Special Award in Campus Journalism', 'year': '2025'},
-      {'name': 'Service Award — Student Leadership', 'year': '2025'},
+      {'name': 'Special Award in Sports (E-sports)'},
+      {'name': 'Special Award in Campus Journalism'},
+      {'name': 'Service Award — Student Leadership'},
     ],
     'Coursera': [
-      {'name': 'Discover the Art of Prompting', 'year': '2024'},
-      {'name': 'Reading and Comprehension of Text in English', 'year': '2024'},
-      {'name': 'Maximize Productivity with AI Tools', 'year': '2024'},
-      {'name': 'Use AI Responsibly', 'year': '2024'},
-      {'name': 'IELTS Reading Section Skills Mastery', 'year': '2024'},
-      {'name': 'Stay Ahead of the AI Curve', 'year': '2024'},
-      {'name': 'Foundations: Data, Data, Everywhere', 'year': '2024'},
-      {'name': 'Introduction to AI', 'year': '2024'},
+      {'name': 'Discover the Art of Prompting'},
+      {'name': 'Reading and Comprehension of Text in English'},
+      {'name': 'Maximize Productivity with AI Tools'},
+      {'name': 'Use AI Responsibly'},
+      {'name': 'IELTS Reading Section Skills Mastery'},
+      {'name': 'Stay Ahead of the AI Curve'},
+      {'name': 'Foundations: Data, Data, Everywhere'},
+      {'name': 'Introduction to AI'},
     ],
   };
 
@@ -49,9 +49,7 @@ class CertificatesPage extends StatelessWidget {
             'Recognition &\nachievements.',
             style: Theme.of(context).textTheme.displaySmall,
           ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
-
           const SizedBox(height: 56),
-
           ..._certs.entries.toList().asMap().entries.map((outer) {
             final groupIdx = outer.key;
             final entry = outer.value;
@@ -61,7 +59,8 @@ class CertificatesPage extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppTheme.surface,
                         border: Border.all(color: AppTheme.border),
@@ -94,7 +93,6 @@ class CertificatesPage extends StatelessWidget {
               ],
             );
           }),
-
           const SizedBox(height: 40),
         ],
       ),

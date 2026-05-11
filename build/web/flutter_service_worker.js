@@ -3,11 +3,12 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"assets/AssetManifest.bin": "0b0a3415aad49b6e9bf965ff578614f9",
-"assets/AssetManifest.bin.json": "a1fee2517bf598633e2f67fcf3e26c94",
-"assets/AssetManifest.json": "99914b932bd37a50b983c5e7c90ae93b",
+const RESOURCES = {"assets/AssetManifest.bin": "22ed9a9862344f4bf8eaa1044c250520",
+"assets/AssetManifest.bin.json": "bedbb909dab65f103f47fa4351ba5175",
+"assets/AssetManifest.json": "aff20ed741450b1b575bdba2c2d16f08",
+"assets/assets/images/profile.jpg": "4471f1780a45cdae8f08ffbc441d45b5",
 "assets/FontManifest.json": "7b2a36307916a9721811788013e65289",
-"assets/fonts/MaterialIcons-Regular.otf": "4ed3342f2c5f853d497ae6b7977b83fc",
+"assets/fonts/MaterialIcons-Regular.otf": "0a36a0e5673a252de9dd874dde01a679",
 "assets/NOTICES": "b8c9be75b1a3d72a9a7d34cbaac70c70",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
 "canvaskit/canvaskit.js": "140ccb7d34d0a55065fbd422b843add6",
@@ -24,14 +25,14 @@ const RESOURCES = {"assets/AssetManifest.bin": "0b0a3415aad49b6e9bf965ff578614f9
 "canvaskit/skwasm_heavy.wasm": "8034ad26ba2485dab2fd49bdd786837b",
 "favicon.png": "5dcef449791fa27946b3d35ad8803796",
 "flutter.js": "888483df48293866f9f41d3d9274a779",
-"flutter_bootstrap.js": "a5cd4709e776088b62b0aa826e51d04d",
+"flutter_bootstrap.js": "483dc882be4306fb9f72862b8a6d8534",
 "icons/Icon-192.png": "ac9a721a12bbc803b44f645561ecb1e1",
 "icons/Icon-512.png": "96e752610906ba2a93c65f8abe1645f1",
 "icons/Icon-maskable-192.png": "c457ef57daa1d16f64b27b786ec2ea3c",
 "icons/Icon-maskable-512.png": "301a7604d45b3e739efc881eb04896ea",
 "index.html": "8edf1030027740d1bbaee623b7ad234d",
 "/": "8edf1030027740d1bbaee623b7ad234d",
-"main.dart.js": "27a987aaacf613434d9276bf85686505",
+"main.dart.js": "d667bb06ec3d3be942410a80c32f427d",
 "manifest.json": "e74af8957b5899dc6da961caee768ec9",
 "version.json": "be1460330b0144ec7535b04efad325e3"};
 // The application shell files that are downloaded before a service worker can

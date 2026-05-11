@@ -21,16 +21,15 @@ final _router = GoRouter(
   initialLocation: '/',
   routes: [
     ShellRoute(
-      builder: (context, state, child) => ScaffoldWithSidebar(child: child),
+      builder: (context, state, child) =>
+          ScaffoldWithSidebar(child: child),
       routes: [
         GoRoute(path: '/', builder: (c, s) => const HomePage()),
         GoRoute(path: '/about', builder: (c, s) => const AboutPage()),
-        GoRoute(
-            path: '/photography', builder: (c, s) => const PhotographyPage()),
+        GoRoute(path: '/photography', builder: (c, s) => const PhotographyPage()),
         GoRoute(path: '/projects', builder: (c, s) => const ProjectsPage()),
         GoRoute(path: '/skills', builder: (c, s) => const SkillsPage()),
-        GoRoute(
-            path: '/certificates', builder: (c, s) => const CertificatesPage()),
+        GoRoute(path: '/certificates', builder: (c, s) => const CertificatesPage()),
         GoRoute(path: '/hobbies', builder: (c, s) => const HobbiesPage()),
         GoRoute(path: '/contact', builder: (c, s) => const ContactPage()),
       ],

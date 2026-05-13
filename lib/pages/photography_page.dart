@@ -10,78 +10,104 @@ class PhotographyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 768;
+    return StreamBuilder<List<PhotoEntry>>(
+      stream: FirebaseService.photosStream(),
+      builder: (context, snap) {
+        final loading = snap.connectionState == ConnectionState.waiting;
+        final photos = snap.data ?? [];
+        final isMobile = MediaQuery.of(context).size.width < 768;
+        final hPad = isMobile ? 28.0 : 80.0;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-              isMobile ? 28 : 80, 48, isMobile ? 28 : 80, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('PHOTOGRAPHY', style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w700,
-                color: AppTheme.grey, letterSpacing: 3,
-              )),
-              const SizedBox(height: 10),
-              Text('Through\nthe lens.',
-                style: Theme.of(context).textTheme.displaySmall,
-              ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
-              const SizedBox(height: 10),
-              const Text(
-                'A visual journal — moments captured, stories told.',
-                style: TextStyle(fontSize: 14, color: AppTheme.grey, height: 1.6),
+        return CustomScrollView(
+          slivers: [
+            // Header — fully scrollable with the content
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 48, hPad, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('PHOTOGRAPHY',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.grey,
+                          letterSpacing: 3,
+                        )).animate().fadeIn(duration: 500.ms),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Through\nthe lens.',
+                      style: Theme.of(context).textTheme.displaySmall,
+                    )
+                        .animate()
+                        .fadeIn(delay: 100.ms, duration: 600.ms)
+                        .slideY(begin: 0.2, end: 0),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'A visual journal — moments captured, stories told.',
+                      style: TextStyle(
+                          fontSize: 14, color: AppTheme.grey, height: 1.6),
+                    ).animate().fadeIn(delay: 200.ms, duration: 600.ms),
+                    if (!loading && photos.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${photos.length} photo${photos.length == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.greyDark,
+                          letterSpacing: 1,
+                        ),
+                      ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
+                    ],
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
+            ),
 
-        // StreamBuilder for live updates
-        Expanded(
-          child: StreamBuilder<List<PhotoEntry>>(
-            stream: FirebaseService.photosStream(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(
-                  color: AppTheme.white, strokeWidth: 1,
-                ));
-              }
-              if (snap.hasError) {
-                return _ErrorState(error: snap.error.toString());
-              }
-              final photos = snap.data ?? [];
-              if (photos.isEmpty) return const _EmptyState();
-              return _MasonryGallery(photos: photos);
-            },
-          ),
-        ),
-      ],
+            // Loading state
+            if (loading)
+              const SliverFillRemaining(
+                child: Center(
+                    child: CircularProgressIndicator(
+                  color: AppTheme.white,
+                  strokeWidth: 1,
+                )),
+              )
+            else if (snap.hasError)
+              SliverFillRemaining(
+                  child: _ErrorState(error: snap.error.toString()))
+            else if (photos.isEmpty)
+              const SliverFillRemaining(child: _EmptyState())
+            else
+              _MasonrySliver(photos: photos, hPad: hPad),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          ],
+        );
+      },
     );
   }
 }
 
-class _MasonryGallery extends StatelessWidget {
+class _MasonrySliver extends StatelessWidget {
   final List<PhotoEntry> photos;
-  const _MasonryGallery({required this.photos});
+  final double hPad;
+  const _MasonrySliver({required this.photos, required this.hPad});
 
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
-    final isMobile = w < 768;
-    final cols = isMobile ? 2 : (w < 1200 ? 3 : 4);
+    final cols = w < 768 ? 2 : (w < 1200 ? 3 : 4);
 
-    return MasonryGridView.count(
-      padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 14 : 80, vertical: 4),
-      crossAxisCount: cols,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      itemCount: photos.length,
-      itemBuilder: (context, i) => _PhotoCard(photo: photos[i], index: i)
-          .animate()
-          .fadeIn(delay: Duration(milliseconds: 40 * (i % 12)), duration: 500.ms),
+    return SliverPadding(
+      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 4),
+      sliver: SliverMasonryGrid.count(
+        crossAxisCount: cols,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        itemBuilder: (context, i) => _PhotoCard(photo: photos[i], index: i),
+        childCount: photos.length,
+      ),
     );
   }
 }
@@ -107,46 +133,66 @@ class _PhotoCardState extends State<_PhotoCard> {
       child: GestureDetector(
         onTap: () => showDialog(
           context: context,
-          barrierColor: Colors.black.withOpacity(0.96),
+          barrierColor: Colors.black.withAlpha(245),
           builder: (_) => _FullscreenViewer(photo: widget.photo),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(3),
-          child: Stack(
-            children: [
-              CachedNetworkImage(
-                imageUrl: widget.photo.thumbnailUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                placeholder: (_, __) => Container(
-                  height: 200, color: AppTheme.surface,
-                  child: const Center(child: SizedBox(
-                    width: 18, height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 1, color: AppTheme.greyDark),
-                  )),
-                ),
-                errorWidget: (_, __, ___) => Container(
-                  height: 200, color: AppTheme.surface,
-                  child: const Icon(Icons.image_not_supported_outlined,
-                      color: AppTheme.greyDark),
-                ),
-              ),
-              AnimatedOpacity(
-                opacity: _hovered ? 1 : 0,
-                duration: const Duration(milliseconds: 180),
-                child: Container(
-                  color: Colors.black.withOpacity(0.45),
-                  child: const Center(
-                    child: Icon(Icons.zoom_in, color: AppTheme.white, size: 26),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(
+              color: _hovered ? AppTheme.greyDark : Colors.transparent,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: Stack(
+              children: [
+                CachedNetworkImage(
+                  imageUrl: widget.photo.thumbnailUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  placeholder: (_, __) => Container(
+                    height: 200,
+                    color: AppTheme.surface,
+                    child: const Center(
+                        child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 1, color: AppTheme.greyDark),
+                    )),
+                  ),
+                  errorWidget: (_, __, ___) => Container(
+                    height: 200,
+                    color: AppTheme.surface,
+                    child: const Icon(Icons.image_not_supported_outlined,
+                        color: AppTheme.greyDark),
                   ),
                 ),
-              ),
-            ],
+                AnimatedOpacity(
+                  opacity: _hovered ? 1 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    color: Colors.black.withAlpha(102),
+                    child: const Center(
+                      child: Icon(Icons.zoom_in_rounded,
+                          color: AppTheme.white, size: 28),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(
+          delay: Duration(milliseconds: 40 * (widget.index % 12)),
+          duration: 500.ms,
+        )
+        .slideY(begin: 0.08, end: 0);
   }
 }
 
@@ -177,7 +223,8 @@ class _FullscreenViewer extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 20, right: 20,
+            top: 20,
+            right: 20,
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
@@ -192,10 +239,14 @@ class _FullscreenViewer extends StatelessWidget {
             ),
           ),
           Positioned(
-            bottom: 24, left: 24,
-            child: Text(photo.name, style: const TextStyle(
-              color: AppTheme.grey, fontSize: 11, letterSpacing: 0.5,
-            )),
+            bottom: 24,
+            left: 24,
+            child: Text(photo.name,
+                style: const TextStyle(
+                  color: AppTheme.grey,
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                )),
           ),
         ],
       ),
@@ -207,16 +258,19 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState();
   @override
   Widget build(BuildContext context) => const Center(
-    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.camera_alt_outlined, size: 44, color: AppTheme.greyDark),
-      SizedBox(height: 14),
-      Text('No photos yet', style: TextStyle(
-        fontSize: 17, fontWeight: FontWeight.w600, color: AppTheme.white)),
-      SizedBox(height: 6),
-      Text('Upload from yoursite.com/#/admin',
-          style: TextStyle(fontSize: 13, color: AppTheme.grey)),
-    ]),
-  );
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.camera_alt_outlined, size: 44, color: AppTheme.greyDark),
+          SizedBox(height: 14),
+          Text('No photos yet',
+              style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.white)),
+          SizedBox(height: 6),
+          Text('Upload from yoursite.com/#/admin',
+              style: TextStyle(fontSize: 13, color: AppTheme.grey)),
+        ]),
+      );
 }
 
 class _ErrorState extends StatelessWidget {
@@ -224,13 +278,18 @@ class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.error});
   @override
   Widget build(BuildContext context) => Center(
-    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      const Icon(Icons.wifi_off_outlined, size: 44, color: AppTheme.greyDark),
-      const SizedBox(height: 14),
-      const Text('Could not load photos', style: TextStyle(
-        fontSize: 17, fontWeight: FontWeight.w600, color: AppTheme.white)),
-      const SizedBox(height: 8),
-      Text(error, style: const TextStyle(fontSize: 11, color: AppTheme.greyDark)),
-    ]),
-  );
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.wifi_off_outlined,
+              size: 44, color: AppTheme.greyDark),
+          const SizedBox(height: 14),
+          const Text('Could not load photos',
+              style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.white)),
+          const SizedBox(height: 8),
+          Text(error,
+              style: const TextStyle(fontSize: 11, color: AppTheme.greyDark)),
+        ]),
+      );
 }

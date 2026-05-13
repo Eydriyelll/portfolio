@@ -68,6 +68,41 @@ class CloudinaryService {
       return CloudinaryUploadResult(success: false, error: e.toString());
     }
   }
+
+  /// Upload profile photo to Cloudinary (separate folder)
+  static Future<CloudinaryUploadResult> uploadProfilePhoto({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
+      request.fields['upload_preset'] = uploadPreset;
+      request.fields['folder'] = 'portfolio/profile';
+      request.fields['resource_type'] = 'image';
+      request.fields['public_id'] = 'profile_photo';
+      request.fields['overwrite'] = 'true';
+      request.files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: fileName),
+      );
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return CloudinaryUploadResult(
+          success: true,
+          url: data['secure_url'],
+          publicId: data['public_id'],
+        );
+      }
+      String msg = 'Upload failed';
+      try {
+        msg = jsonDecode(response.body)['error']?['message'] ?? msg;
+      } catch (_) {}
+      return CloudinaryUploadResult(success: false, error: msg);
+    } catch (e) {
+      return CloudinaryUploadResult(success: false, error: e.toString());
+    }
+  }
 }
 
 class CloudinaryUploadResult {

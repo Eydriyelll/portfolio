@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
+import '../services/firebase_service.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -76,65 +77,64 @@ class _HeroPhotoCard extends StatelessWidget {
     final isMobile = MediaQuery.of(context).size.width < 768;
     final avatarSize = isMobile ? 200.0 : 260.0;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Circle avatar with border
-        Container(
-          width: avatarSize,
-          height: avatarSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppTheme.border, width: 1.5),
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/profile.jpg',
-              fit: BoxFit.cover,
-              // Show face — slightly center-up crop
-              alignment: const Alignment(0, -0.2),
+    return StreamBuilder<String?>(
+      stream: FirebaseService.profilePhotoStream(),
+      builder: (context, snap) {
+        final remoteUrl = snap.data;
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: avatarSize,
+              height: avatarSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.border, width: 1.5),
+              ),
+              child: ClipOval(
+                child: remoteUrl != null
+                    ? Image.network(
+                        remoteUrl,
+                        fit: BoxFit.cover,
+                        alignment: const Alignment(0, -0.2),
+                      )
+                    : Image.asset(
+                        'assets/images/profile.jpg',
+                        fit: BoxFit.cover,
+                        alignment: const Alignment(0, -0.2),
+                      ),
+              ),
             ),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Status badge below avatar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: AppTheme.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF4ADE80),
-                  shape: BoxShape.circle,
-                ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: AppTheme.border),
               ),
-              const SizedBox(width: 10),
-              const Text(
-                'Open to opportunities',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.grey,
-                  letterSpacing: 0.3,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7, height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF4ADE80), shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('Open to opportunities',
+                    style: TextStyle(fontSize: 12, color: AppTheme.grey,
+                        letterSpacing: 0.3)),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
-    )
-        .animate()
-        .fadeIn(delay: 200.ms, duration: 800.ms)
-        .slideX(begin: 0.15, end: 0);
+            ),
+          ],
+        )
+            .animate()
+            .fadeIn(delay: 200.ms, duration: 800.ms)
+            .slideX(begin: 0.15, end: 0);
+      },
+    );
   }
 }
 

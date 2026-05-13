@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_theme.dart';
 import '../widgets/animated_page_wrapper.dart';
+import '../widgets/portfolio_icons.dart';
 
 class HobbiesPage extends StatelessWidget {
   const HobbiesPage({super.key});
 
   static const List<Map<String, dynamic>> _hobbies = [
-    {'name': 'Music', 'desc': 'Music is a constant companion — from discovering new tracks to getting lost in sound.', 'icon': Icons.music_note_outlined, 'emoji': '🎵'},
-    {'name': 'Bass Guitar', 'desc': 'Holding down the low end. The bass is my instrument of choice — groove and rhythm.', 'icon': Icons.queue_music_outlined, 'emoji': '🎸'},
-    {'name': 'Working Out', 'desc': 'Discipline in the gym mirrors discipline in code. Consistency is everything.', 'icon': Icons.fitness_center_outlined, 'emoji': '💪'},
-    {'name': 'Sports', 'desc': 'Competitive at heart. Sports keep me sharp, social, and grounded.', 'icon': Icons.sports_outlined, 'emoji': '🏆'},
-    {'name': 'Reading', 'desc': 'Books expand the mind. Whether it\'s tech, fiction, or philosophy — always reading.', 'icon': Icons.menu_book_outlined, 'emoji': '📚'},
-    {'name': 'Gaming', 'desc': 'Games are interactive art. Storytelling, strategy, and community all in one.', 'icon': Icons.sports_esports_outlined, 'emoji': '🎮'},
-    {'name': 'Studying', 'desc': 'Lifelong learner. Always chasing the next concept, skill, or rabbit hole.', 'icon': Icons.school_outlined, 'emoji': '📖'},
-    {'name': 'Photography', 'desc': 'Capturing light, mood, and moments. Photography is my second visual language.', 'icon': Icons.camera_alt_outlined, 'emoji': '📷'},
+    {'name': 'Music', 'desc': 'A constant companion — discovering tracks and getting lost in sound.'},
+    {'name': 'Bass Guitar', 'desc': 'Holding down the low end. Groove, rhythm, feel.'},
+    {'name': 'Working Out', 'desc': 'Discipline in the gym mirrors discipline in code.'},
+    {'name': 'Sports', 'desc': 'Competitive at heart. Sports keep me sharp and grounded.'},
+    {'name': 'Reading', 'desc': 'Tech, fiction, or philosophy — always reading something.'},
+    {'name': 'Gaming', 'desc': 'Games are interactive art — storytelling and strategy.'},
+    {'name': 'Studying', 'desc': 'Always chasing the next concept, skill, or rabbit hole.'},
+    {'name': 'Photography', 'desc': 'Capturing light and moments — my second visual language.'},
   ];
 
   @override
@@ -31,18 +32,14 @@ class HobbiesPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeading(
-              label: 'HOBBIES',
-              title: 'Beyond\nthe screen.',
-            ),
+            const SectionHeading(label: 'HOBBIES', title: 'Beyond\nthe screen.'),
             const SizedBox(height: 56),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: cols,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
+                mainAxisSpacing: 12, crossAxisSpacing: 12,
                 childAspectRatio: isMobile ? 0.88 : 1.0,
               ),
               itemCount: _hobbies.length,
@@ -70,38 +67,41 @@ class _HobbyCardState extends State<_HobbyCard> {
 
   @override
   Widget build(BuildContext context) {
+    final icon = PortfolioIcons.forHobby(widget.hobby['name'] as String);
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         transform: Matrix4.translationValues(0, _hovered ? -4 : 0, 0),
         decoration: BoxDecoration(
           color: _hovered ? AppTheme.card : AppTheme.surface,
           border: Border.all(
-            color: _hovered ? AppTheme.greyDark : AppTheme.border,
-          ),
+              color: _hovered ? AppTheme.greyDark : AppTheme.border),
           borderRadius: BorderRadius.circular(4),
-          boxShadow: _hovered ? [
-            BoxShadow(color: Colors.black.withOpacity(0.3),
-                blurRadius: 12, offset: const Offset(0, 6))
-          ] : [],
+          boxShadow: _hovered ? [BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 12, offset: const Offset(0, 6),
+          )] : [],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(fontSize: _hovered ? 28 : 24),
-                child: Text(widget.hobby['emoji'] as String),
+            // Vector icon badge
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: _hovered
+                    ? AppTheme.greyDark
+                    : AppTheme.border,
+                borderRadius: BorderRadius.circular(8),
               ),
-              Icon(widget.hobby['icon'] as IconData,
-                  size: 18,
-                  color: _hovered ? AppTheme.grey : AppTheme.greyDark),
-            ]),
+              child: Icon(icon, size: 20,
+                  color: _hovered ? AppTheme.white : AppTheme.grey),
+            ),
             const Spacer(),
             Text(widget.hobby['name'] as String, style: const TextStyle(
               fontFamily: 'SpaceGrotesk', fontSize: 16,

@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/cloudinary_service.dart';
+import '../services/firebase_service.dart';
 import '../theme/app_theme.dart';
 
 const String _adminPassword = 'MidnightStar30';
@@ -160,7 +161,7 @@ class _AdminPanel extends StatefulWidget {
 
 class _AdminPanelState extends State<_AdminPanel> {
   List<_UploadTask> _tasks = [];
-  List<CloudinaryPhoto> _existingPhotos = [];
+  List<PhotoEntry> _existingPhotos = [];
   bool _uploading = false;
   bool _loadingPhotos = true;
   int _selectedTab = 0; // 0 = Upload, 1 = Manage
@@ -173,7 +174,7 @@ class _AdminPanelState extends State<_AdminPanel> {
 
   Future<void> _loadExisting() async {
     setState(() => _loadingPhotos = true);
-    final photos = await CloudinaryService.fetchPhotos();
+    final photos = await FirebaseService.fetchPhotos();
     if (mounted) setState(() { _existingPhotos = photos; _loadingPhotos = false; });
   }
 
@@ -225,7 +226,7 @@ class _AdminPanelState extends State<_AdminPanel> {
     }
   }
 
-  Future<void> _deletePhoto(CloudinaryPhoto photo) async {
+  Future<void> _deletePhoto(PhotoEntry photo) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -255,7 +256,7 @@ class _AdminPanelState extends State<_AdminPanel> {
     );
 
     if (confirm == true) {
-      await CloudinaryService.removePhotoFromList(photo.publicId);
+      await FirebaseService.removePhoto(photo.docId!);
       _showSnack('Photo removed from gallery.');
       await _loadExisting();
     }
@@ -540,7 +541,7 @@ class _UploadRow extends StatelessWidget {
 }
 
 class _ManagePhotoCard extends StatefulWidget {
-  final CloudinaryPhoto photo;
+  final PhotoEntry photo;
   final VoidCallback onDelete;
   const _ManagePhotoCard({required this.photo, required this.onDelete});
 

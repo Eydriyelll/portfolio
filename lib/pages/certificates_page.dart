@@ -7,19 +7,19 @@ class CertificatesPage extends StatelessWidget {
 
   static const Map<String, List<Map<String, String>>> _certs = {
     'MMCL — Mapúa Malayan Colleges Laguna': [
-      {'name': 'Special Award in Sports (E-sports)'},
-      {'name': 'Special Award in Campus Journalism'},
-      {'name': 'Service Award — Student Leadership'},
+      {'name': 'Special Award in Sports (E-sports)', 'year': '2025'},
+      {'name': 'Special Award in Campus Journalism', 'year': '2025'},
+      {'name': 'Service Award — Student Leadership', 'year': '2025'},
     ],
     'Coursera': [
-      {'name': 'Discover the Art of Prompting'},
-      {'name': 'Reading and Comprehension of Text in English'},
-      {'name': 'Maximize Productivity with AI Tools'},
-      {'name': 'Use AI Responsibly'},
-      {'name': 'IELTS Reading Section Skills Mastery'},
-      {'name': 'Stay Ahead of the AI Curve'},
-      {'name': 'Foundations: Data, Data, Everywhere'},
-      {'name': 'Introduction to AI'},
+      {'name': 'Discover the Art of Prompting', 'year': '2024'},
+      {'name': 'Reading and Comprehension of Text in English', 'year': '2024'},
+      {'name': 'Maximize Productivity with AI Tools', 'year': '2024'},
+      {'name': 'Use AI Responsibly', 'year': '2024'},
+      {'name': 'IELTS Reading Section Skills Mastery', 'year': '2024'},
+      {'name': 'Stay Ahead of the AI Curve', 'year': '2024'},
+      {'name': 'Foundations: Data, Data, Everywhere', 'year': '2024'},
+      {'name': 'Introduction to AI', 'year': '2024'},
     ],
   };
 

@@ -19,6 +19,8 @@ dependencies:
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.0
   mime: ^1.0.5
+  firebase_core: ^3.0.0
+  cloud_firestore: ^5.0.0
 
 dev_dependencies:
   flutter_test:

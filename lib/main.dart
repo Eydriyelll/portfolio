@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'pages/home_page.dart';
 import 'pages/about_page.dart';
@@ -13,7 +14,11 @@ import 'pages/contact_page.dart';
 import 'pages/admin_page.dart';
 import 'widgets/scaffold_with_sidebar.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const AdrielPortfolio());
 }
 
@@ -21,8 +26,7 @@ final _router = GoRouter(
   initialLocation: '/',
   routes: [
     ShellRoute(
-      builder: (context, state, child) =>
-          ScaffoldWithSidebar(child: child),
+      builder: (context, state, child) => ScaffoldWithSidebar(child: child),
       routes: [
         GoRoute(path: '/', builder: (c, s) => const HomePage()),
         GoRoute(path: '/about', builder: (c, s) => const AboutPage()),

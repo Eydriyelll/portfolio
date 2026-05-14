@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -141,13 +142,18 @@ class _AdminShellState extends State<_AdminShell> {
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('ADMIN', style: TextStyle(fontFamily: 'SpaceGrotesk',
                 fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.white)),
-            GestureDetector(
-              onTap: widget.onLogout,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                decoration: BoxDecoration(border: Border.all(color: AppTheme.border),
-                    borderRadius: BorderRadius.circular(3)),
-                child: const Text('Logout', style: TextStyle(fontSize: 12, color: AppTheme.grey)),
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(3),
+              child: InkWell(
+                onTap: widget.onLogout,
+                borderRadius: BorderRadius.circular(3),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(border: Border.all(color: AppTheme.border),
+                      borderRadius: BorderRadius.circular(3)),
+                  child: const Text('Logout', style: TextStyle(fontSize: 12, color: AppTheme.grey)),
+                ),
               ),
             ),
           ]),
@@ -406,29 +412,29 @@ class _ProfileTabState extends State<_ProfileTab> {
           const SizedBox(height: 32),
 
           // Upload button
-          GestureDetector(
-            onTap: _uploading ? null : _pickAndUpload,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-              decoration: BoxDecoration(
-                color: _uploading ? AppTheme.border : AppTheme.white,
-                borderRadius: BorderRadius.circular(4),
+          Material(
+            color: _uploading ? AppTheme.border : AppTheme.white,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: _uploading ? null : _pickAndUpload,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (_uploading)
+                    const SizedBox(width: 16, height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 1.5, color: AppTheme.grey))
+                  else
+                    const Icon(Icons.upload_outlined, size: 16, color: AppTheme.black),
+                  const SizedBox(width: 8),
+                  Text(_uploading ? 'Uploading…' : 'Choose & Upload Photo',
+                    style: TextStyle(
+                      fontFamily: 'SpaceGrotesk', fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _uploading ? AppTheme.grey : AppTheme.black)),
+                ]),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (_uploading)
-                  const SizedBox(width: 16, height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 1.5, color: AppTheme.grey))
-                else
-                  const Icon(Icons.upload_outlined, size: 16, color: AppTheme.black),
-                const SizedBox(width: 8),
-                Text(_uploading ? 'Uploading…' : 'Choose & Upload Photo',
-                  style: TextStyle(
-                    fontFamily: 'SpaceGrotesk', fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: _uploading ? AppTheme.grey : AppTheme.black)),
-              ]),
             ),
           ),
 
@@ -680,18 +686,21 @@ class _ProjectsTabState extends State<_ProjectsTab> {
           const SizedBox(width: 12),
           ...['Live', 'In Progress', 'Archived'].map((s) => Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () => setState(() => _status = s),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _status == s ? AppTheme.white : Colors.transparent,
-                  border: Border.all(color: _status == s ? AppTheme.white : AppTheme.border),
-                  borderRadius: BorderRadius.circular(3),
+            child: Material(
+              color: _status == s ? AppTheme.white : Colors.transparent,
+              borderRadius: BorderRadius.circular(3),
+              child: InkWell(
+                onTap: () => setState(() => _status = s),
+                borderRadius: BorderRadius.circular(3),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: _status == s ? AppTheme.white : AppTheme.border),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(s, style: TextStyle(fontSize: 12,
+                      color: _status == s ? AppTheme.black : AppTheme.grey)),
                 ),
-                child: Text(s, style: TextStyle(fontSize: 12,
-                    color: _status == s ? AppTheme.black : AppTheme.grey)),
               ),
             ),
           )),
@@ -739,15 +748,31 @@ class _ContactTabState extends State<_ContactTab> {
   @override
   void initState() {
     super.initState();
-    FirebaseService.contactStream().first.then((c) {
+    _loadContact();
+  }
+
+  Future<void> _loadContact() async {
+    try {
+      final c = await FirebaseService.contactStream()
+          .first
+          .timeout(const Duration(seconds: 5), onTimeout: () => ContactData());
       if (!mounted) return;
       _emailCtrl.text = c.email;
       _phoneCtrl.text = c.phone;
       _addressCtrl.text = c.address;
       _igCtrl.text = c.instagram;
       _fbCtrl.text = c.facebook;
-      setState(() => _loaded = true);
-    });
+    } catch (_) {
+      if (!mounted) return;
+      // Use defaults if Firestore fails
+      final c = ContactData();
+      _emailCtrl.text = c.email;
+      _phoneCtrl.text = c.phone;
+      _addressCtrl.text = c.address;
+      _igCtrl.text = c.instagram;
+      _fbCtrl.text = c.facebook;
+    }
+    setState(() => _loaded = true);
   }
 
   Future<void> _save() async {
@@ -800,26 +825,26 @@ class _ContactTabState extends State<_ContactTab> {
         _FieldLabel('Facebook URL'),
         _StyledTextField(controller: _fbCtrl, hint: 'https://facebook.com/...'),
         const SizedBox(height: 28),
-        GestureDetector(
-          onTap: _saving ? null : _save,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
-            decoration: BoxDecoration(
-              color: _saving ? AppTheme.border : AppTheme.white,
-              borderRadius: BorderRadius.circular(4),
+        Material(
+          color: _saving ? AppTheme.border : AppTheme.white,
+          borderRadius: BorderRadius.circular(4),
+          child: InkWell(
+            onTap: _saving ? null : _save,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (_saving)
+                  const SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 1.5, color: AppTheme.grey))
+                else
+                  const Icon(Icons.save_outlined, size: 16, color: AppTheme.black),
+                const SizedBox(width: 8),
+                Text(_saving ? 'Saving…' : 'Save Changes', style: TextStyle(
+                  fontFamily: 'SpaceGrotesk', fontSize: 14, fontWeight: FontWeight.w600,
+                  color: _saving ? AppTheme.grey : AppTheme.black)),
+              ]),
             ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (_saving)
-                const SizedBox(width: 14, height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 1.5, color: AppTheme.grey))
-              else
-                const Icon(Icons.save_outlined, size: 16, color: AppTheme.black),
-              const SizedBox(width: 8),
-              Text(_saving ? 'Saving…' : 'Save Changes', style: TextStyle(
-                fontFamily: 'SpaceGrotesk', fontSize: 14, fontWeight: FontWeight.w600,
-                color: _saving ? AppTheme.grey : AppTheme.black)),
-            ]),
           ),
         ),
         const SizedBox(height: 60),
@@ -922,14 +947,17 @@ class _AddButton extends StatelessWidget {
   const _AddButton({required this.label, required this.onTap});
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      decoration: BoxDecoration(color: AppTheme.white,
-          borderRadius: BorderRadius.circular(4)),
-      child: Text(label, style: const TextStyle(fontFamily: 'SpaceGrotesk',
-          fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.black)),
+  Widget build(BuildContext context) => Material(
+    color: AppTheme.white,
+    borderRadius: BorderRadius.circular(4),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: Text(label, style: const TextStyle(fontFamily: 'SpaceGrotesk',
+            fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.black)),
+      ),
     ),
   );
 }
@@ -952,11 +980,17 @@ class _ListRow extends StatelessWidget {
             fontWeight: FontWeight.w500)),
         Text(sublabel, style: const TextStyle(fontSize: 11, color: AppTheme.greyDark)),
       ])),
-      GestureDetector(onTap: onDelete,
-        child: Container(padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(border: Border.all(color: AppTheme.border),
-              borderRadius: BorderRadius.circular(3)),
-          child: const Icon(Icons.delete_outline, size: 14, color: Color(0xFFFF5555)),
+      Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(3),
+        child: InkWell(
+          onTap: onDelete,
+          borderRadius: BorderRadius.circular(3),
+          child: Container(padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(border: Border.all(color: AppTheme.border),
+                borderRadius: BorderRadius.circular(3)),
+            child: const Icon(Icons.delete_outline, size: 14, color: Color(0xFFFF5555)),
+          ),
         ),
       ),
     ]),

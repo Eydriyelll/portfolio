@@ -18,7 +18,7 @@ class CloudinaryService {
   static String getOriginalUrl(String publicId) =>
       'https://res.cloudinary.com/$cloudName/image/upload/$publicId';
 
-  /// Upload photo to Cloudinary, then save metadata to Firestore
+  /// Upload gallery photo → saves to Firestore
   static Future<CloudinaryUploadResult> uploadPhoto({
     required Uint8List bytes,
     required String fileName,
@@ -48,7 +48,6 @@ class CloudinaryService {
       final publicId = data['public_id'] as String;
       final url = data['secure_url'] as String;
 
-      // Save to Firestore
       await FirebaseService.addPhoto(PhotoEntry(
         publicId: publicId,
         url: url,
@@ -59,17 +58,13 @@ class CloudinaryService {
         uploadedAt: DateTime.now(),
       ));
 
-      return CloudinaryUploadResult(
-        success: true,
-        url: url,
-        publicId: publicId,
-      );
+      return CloudinaryUploadResult(success: true, url: url, publicId: publicId);
     } catch (e) {
       return CloudinaryUploadResult(success: false, error: e.toString());
     }
   }
 
-  /// Upload profile photo to Cloudinary (separate folder)
+  /// Upload profile photo → returns URL (saved to Firestore by caller)
   static Future<CloudinaryUploadResult> uploadProfilePhoto({
     required Uint8List bytes,
     required String fileName,
@@ -79,13 +74,13 @@ class CloudinaryService {
       request.fields['upload_preset'] = uploadPreset;
       request.fields['folder'] = 'portfolio/profile';
       request.fields['resource_type'] = 'image';
-      request.fields['public_id'] = 'profile_photo';
-      request.fields['overwrite'] = 'true';
       request.files.add(
         http.MultipartFile.fromBytes('file', bytes, filename: fileName),
       );
+
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return CloudinaryUploadResult(
@@ -94,7 +89,8 @@ class CloudinaryService {
           publicId: data['public_id'],
         );
       }
-      String msg = 'Upload failed';
+
+      String msg = 'Upload failed (${response.statusCode})';
       try {
         msg = jsonDecode(response.body)['error']?['message'] ?? msg;
       } catch (_) {}

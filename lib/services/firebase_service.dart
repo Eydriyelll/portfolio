@@ -70,7 +70,10 @@ class FirebaseService {
       .collection('settings')
       .doc('contact')
       .snapshots()
-      .map((s) => ContactData.fromMap(s.data() ?? {}));
+      .map((s) {
+        if (!s.exists || s.data() == null) return ContactData();
+        return ContactData.fromMap(s.data()!);
+      });
 
   static Future<void> updateContact(ContactData c) async =>
       await _db.collection('settings').doc('contact').set(c.toMap());

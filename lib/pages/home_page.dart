@@ -117,14 +117,17 @@ class _HeroPhotoCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 7, height: 7,
+                    width: 7,
+                    height: 7,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF4ADE80), shape: BoxShape.circle),
+                        color: Color(0xFF4ADE80), shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 10),
                   const Text('Open to opportunities',
-                    style: TextStyle(fontSize: 12, color: AppTheme.grey,
-                        letterSpacing: 0.3)),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.grey,
+                          letterSpacing: 0.3)),
                 ],
               ),
             ),
@@ -156,7 +159,7 @@ class _HeroText extends StatelessWidget {
             borderRadius: BorderRadius.circular(3),
           ),
           child: const Text(
-            'PORTFOLIO 2025',
+            'PORTFOLIO',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -164,13 +167,8 @@ class _HeroText extends StatelessWidget {
               letterSpacing: 3,
             ),
           ),
-        )
-            .animate()
-            .fadeIn(duration: 600.ms)
-            .slideY(begin: 0.3, end: 0),
-
+        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3, end: 0),
         const SizedBox(height: 24),
-
         Text(
           'Adriel\nAraos.',
           style: TextStyle(
@@ -185,9 +183,7 @@ class _HeroText extends StatelessWidget {
             .animate()
             .fadeIn(delay: 100.ms, duration: 700.ms)
             .slideY(begin: 0.3, end: 0),
-
         const SizedBox(height: 20),
-
         const Text(
           'Code. Capture. Create.',
           style: TextStyle(
@@ -201,9 +197,7 @@ class _HeroText extends StatelessWidget {
             .animate()
             .fadeIn(delay: 200.ms, duration: 700.ms)
             .slideY(begin: 0.2, end: 0),
-
         const SizedBox(height: 14),
-
         const Text(
           'Developer & Photographer\nSanta Rosa, Laguna, Philippines.',
           style: TextStyle(
@@ -211,12 +205,8 @@ class _HeroText extends StatelessWidget {
             color: AppTheme.greyDark,
             height: 1.7,
           ),
-        )
-            .animate()
-            .fadeIn(delay: 280.ms, duration: 600.ms),
-
+        ).animate().fadeIn(delay: 280.ms, duration: 600.ms),
         const SizedBox(height: 40),
-
         Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -236,9 +226,7 @@ class _HeroText extends StatelessWidget {
             .animate()
             .fadeIn(delay: 350.ms, duration: 600.ms)
             .slideY(begin: 0.15, end: 0),
-
         const SizedBox(height: 32),
-
         Row(
           children: [
             _SocialLink(
@@ -246,16 +234,15 @@ class _HeroText extends StatelessWidget {
               url: 'https://www.instagram.com/iitzme_eydriyel/',
             ),
             const SizedBox(width: 4),
-            const Text('·', style: TextStyle(color: AppTheme.greyDark, fontSize: 16)),
+            const Text('·',
+                style: TextStyle(color: AppTheme.greyDark, fontSize: 16)),
             const SizedBox(width: 4),
             _SocialLink(
               label: 'Facebook',
               url: 'https://www.facebook.com/adriel.araos.2024',
             ),
           ],
-        )
-            .animate()
-            .fadeIn(delay: 450.ms, duration: 600.ms),
+        ).animate().fadeIn(delay: 450.ms, duration: 600.ms),
       ],
     );
   }
@@ -343,7 +330,8 @@ class _SocialLinkState extends State<_SocialLink> {
             fontFamily: 'SpaceGrotesk',
             fontSize: 13,
             color: _hovered ? AppTheme.white : AppTheme.grey,
-            decoration: _hovered ? TextDecoration.underline : TextDecoration.none,
+            decoration:
+                _hovered ? TextDecoration.underline : TextDecoration.none,
             decorationColor: AppTheme.white,
           ),
           child: Text(widget.label),
@@ -357,8 +345,16 @@ class _SkillStrip extends StatelessWidget {
   const _SkillStrip();
 
   static const List<String> skills = [
-    'JavaScript', 'TypeScript', 'Flutter', 'React',
-    'Python', 'HTML', 'CSS', 'Vercel', 'Photography', 'Web Dev',
+    'JavaScript',
+    'TypeScript',
+    'Flutter',
+    'React',
+    'Python',
+    'HTML',
+    'CSS',
+    'Vercel',
+    'Photography',
+    'Web Dev',
   ];
 
   @override

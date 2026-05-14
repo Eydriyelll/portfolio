@@ -7,7 +7,9 @@ import 'firebase_service.dart';
 class CloudinaryService {
   static const String cloudName = 'diut63biv';
   static const String uploadPreset = 'hc6sufp9';
+  static const String profileUploadPreset = 'portfolio_profile';
   static const String folder = 'portfolio/photography';
+  static const String profileFolder = 'portfolio/profile';
 
   static String get uploadUrl =>
       'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
@@ -72,8 +74,8 @@ class CloudinaryService {
   }) async {
     try {
       final request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
-      request.fields['upload_preset'] = uploadPreset;
-      request.fields['folder'] = 'portfolio/profile';
+      request.fields['upload_preset'] = profileUploadPreset;
+      request.fields['folder'] = profileFolder;
       request.fields['resource_type'] = 'image';
       request.files.add(
         http.MultipartFile.fromBytes('file', bytes, filename: fileName),

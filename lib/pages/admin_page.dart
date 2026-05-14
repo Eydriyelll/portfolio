@@ -324,17 +324,33 @@ class _ProfileTabState extends State<_ProfileTab> {
       type: FileType.image, withData: true, allowMultiple: false);
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
-    if (file.bytes == null) return;
+    if (file.bytes == null) {
+      setState(() { _status = '✗ Could not read file bytes.'; });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setState(() { _status = '✗ File exceeds 10MB limit.'; });
+      return;
+    }
     setState(() { _uploading = true; _status = 'Uploading…'; });
 
-    final res = await CloudinaryService.uploadProfilePhoto(
-      bytes: file.bytes!, fileName: file.name);
+    try {
+      final res = await CloudinaryService.uploadProfilePhoto(
+        bytes: file.bytes!, fileName: file.name,
+      ).timeout(const Duration(seconds: 30), onTimeout: () =>
+          CloudinaryUploadResult(success: false, error: 'Upload timed out. Try a smaller file.'));
 
-    if (res.success && res.url != null) {
-      await FirebaseService.setProfilePhoto(res.url!);
-      setState(() { _uploading = false; _status = '✓ Profile photo updated!'; });
-    } else {
-      setState(() { _uploading = false; _status = '✗ ${res.error ?? 'Upload failed'}'; });
+      if (!mounted) return;
+
+      if (res.success && res.url != null) {
+        await FirebaseService.setProfilePhoto(res.url!);
+        setState(() { _uploading = false; _status = '✓ Profile photo updated!'; });
+      } else {
+        setState(() { _uploading = false; _status = '✗ ${res.error ?? 'Upload failed'}'; });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _uploading = false; _status = '✗ ${e.toString()}'; });
     }
   }
 
@@ -474,17 +490,18 @@ class _SkillsTabState extends State<_SkillsTab> {
 
   Future<void> _add() async {
     final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return;
-    await FirebaseService.addSkill(SkillEntry(name: name, category: _category));
+    if (name.isEmpty) { _snack('Please enter a skill name.', isError: true); return; }
+    final err = await FirebaseService.addSkill(SkillEntry(name: name, category: _category));
+    if (err != null) { _snack('Error: $err', isError: true); return; }
     _nameCtrl.clear();
     _snack('Skill added!');
   }
 
-  void _snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(
+  void _snack(String msg, {bool isError = false}) => ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(msg, style: const TextStyle(color: AppTheme.white)),
       backgroundColor: AppTheme.surface, behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: AppTheme.border))));
+          side: BorderSide(color: isError ? const Color(0xFFFF5555) : AppTheme.border))));
 
   @override
   void dispose() { _nameCtrl.dispose(); super.dispose(); }
@@ -524,8 +541,9 @@ class _SkillsTabState extends State<_SkillsTab> {
             return Column(children: skills.map((s) => _ListRow(
               label: s.name, sublabel: s.category,
               onDelete: () async {
-                await FirebaseService.removeSkill(s.docId!);
-                _snack('Removed.');
+                final ok = await showDialog<bool>(context: context,
+                  builder: (_) => _ConfirmDialog(message: 'Remove skill "${s.name}"?')) ?? false;
+                if (ok) { await FirebaseService.removeSkill(s.docId!); _snack('Skill removed.'); }
               },
             )).toList());
           },
@@ -552,20 +570,21 @@ class _CertsTabState extends State<_CertsTab> {
 
   Future<void> _add() async {
     final name = _nameCtrl.text.trim();
+    if (name.isEmpty) { _snack('Please enter a certificate name.', isError: true); return; }
     final issuer = _issuer == 'New Section'
         ? (_customCtrl.text.trim().isEmpty ? 'Other' : _customCtrl.text.trim())
         : _issuer;
-    if (name.isEmpty) return;
-    await FirebaseService.addCert(CertEntry(name: name, issuer: issuer));
+    final err = await FirebaseService.addCert(CertEntry(name: name, issuer: issuer));
+    if (err != null) { _snack('Error: $err', isError: true); return; }
     _nameCtrl.clear(); _customCtrl.clear();
     _snack('Certificate added!');
   }
 
-  void _snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(
+  void _snack(String msg, {bool isError = false}) => ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(msg, style: const TextStyle(color: AppTheme.white)),
       backgroundColor: AppTheme.surface, behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: AppTheme.border))));
+          side: BorderSide(color: isError ? const Color(0xFFFF5555) : AppTheme.border))));
 
   @override
   void dispose() { _nameCtrl.dispose(); _customCtrl.dispose(); super.dispose(); }
@@ -610,8 +629,9 @@ class _CertsTabState extends State<_CertsTab> {
             return Column(children: certs.map((c) => _ListRow(
               label: c.name, sublabel: c.issuer,
               onDelete: () async {
-                await FirebaseService.removeCert(c.docId!);
-                _snack('Removed.');
+                final ok = await showDialog<bool>(context: context,
+                  builder: (_) => _ConfirmDialog(message: 'Remove certificate "${c.name}"?')) ?? false;
+                if (ok) { await FirebaseService.removeCert(c.docId!); _snack('Certificate removed.'); }
               },
             )).toList());
           },
@@ -639,24 +659,26 @@ class _ProjectsTabState extends State<_ProjectsTab> {
   Future<void> _add() async {
     final name = _nameCtrl.text.trim();
     final url = _urlCtrl.text.trim();
-    if (name.isEmpty || url.isEmpty) return;
+    if (name.isEmpty) { _snack('Please enter a project name.', isError: true); return; }
+    if (url.isEmpty) { _snack('Please enter a project URL.', isError: true); return; }
     final tags = _tagsCtrl.text.split(',')
         .map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
-    await FirebaseService.addProject(ProjectEntry(
+    final err = await FirebaseService.addProject(ProjectEntry(
       name: name, url: url,
       description: _descCtrl.text.trim(),
       status: _status, tags: tags,
     ));
+    if (err != null) { _snack('Error: $err', isError: true); return; }
     _nameCtrl.clear(); _urlCtrl.clear();
     _descCtrl.clear(); _tagsCtrl.clear();
     _snack('Project added!');
   }
 
-  void _snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(
+  void _snack(String msg, {bool isError = false}) => ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(msg, style: const TextStyle(color: AppTheme.white)),
       backgroundColor: AppTheme.surface, behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: AppTheme.border))));
+          side: BorderSide(color: isError ? const Color(0xFFFF5555) : AppTheme.border))));
 
   @override
   void dispose() {
@@ -718,8 +740,9 @@ class _ProjectsTabState extends State<_ProjectsTab> {
             return Column(children: projects.map((p) => _ListRow(
               label: p.name, sublabel: p.url,
               onDelete: () async {
-                await FirebaseService.removeProject(p.docId!);
-                _snack('Removed.');
+                final ok = await showDialog<bool>(context: context,
+                  builder: (_) => _ConfirmDialog(message: 'Remove project "${p.name}"?')) ?? false;
+                if (ok) { await FirebaseService.removeProject(p.docId!); _snack('Project removed.'); }
               },
             )).toList());
           },
@@ -777,7 +800,7 @@ class _ContactTabState extends State<_ContactTab> {
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    await FirebaseService.updateContact(ContactData(
+    final err = await FirebaseService.updateContact(ContactData(
       email: _emailCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
       address: _addressCtrl.text.trim(),
@@ -785,12 +808,13 @@ class _ContactTabState extends State<_ContactTab> {
       facebook: _fbCtrl.text.trim(),
     ));
     setState(() => _saving = false);
+    final msg = err != null ? 'Error: $err' : 'Contact info updated!';
+    final isErr = err != null;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text('Contact info updated!',
-          style: TextStyle(color: AppTheme.white)),
+      content: Text(msg, style: const TextStyle(color: AppTheme.white)),
       backgroundColor: AppTheme.surface, behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: AppTheme.border))));
+          side: BorderSide(color: isErr ? const Color(0xFFFF5555) : AppTheme.border))));
   }
 
   @override

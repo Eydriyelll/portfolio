@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
@@ -78,8 +79,10 @@ class CloudinaryService {
         http.MultipartFile.fromBytes('file', bytes, filename: fileName),
       );
 
-      final streamed = await request.send();
-      final response = await http.Response.fromStream(streamed);
+      final streamed = await request.send()
+          .timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamed)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -95,6 +98,8 @@ class CloudinaryService {
         msg = jsonDecode(response.body)['error']?['message'] ?? msg;
       } catch (_) {}
       return CloudinaryUploadResult(success: false, error: msg);
+    } on TimeoutException {
+      return CloudinaryUploadResult(success: false, error: 'Upload timed out. Try a smaller image.');
     } catch (e) {
       return CloudinaryUploadResult(success: false, error: e.toString());
     }

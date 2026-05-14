@@ -10,11 +10,15 @@ class FirebaseService {
       .snapshots()
       .map((s) => s.docs.map(PhotoEntry.fromDoc).toList());
 
-  static Future<void> addPhoto(PhotoEntry p) async =>
-      await _db.collection('photos').add(p.toMap());
+  static Future<String?> addPhoto(PhotoEntry p) async {
+    try { await _db.collection('photos').add(p.toMap()); return null; }
+    catch (e) { return e.toString(); }
+  }
 
-  static Future<void> removePhoto(String id) async =>
-      await _db.collection('photos').doc(id).delete();
+  static Future<String?> removePhoto(String id) async {
+    try { await _db.collection('photos').doc(id).delete(); return null; }
+    catch (e) { return e.toString(); }
+  }
 
   // ─── PROFILE ─────────────────────────────────────────────────
   static Stream<String?> profilePhotoStream() => _db
@@ -23,8 +27,10 @@ class FirebaseService {
       .snapshots()
       .map((s) => s.data()?['photoUrl'] as String?);
 
-  static Future<void> setProfilePhoto(String url) async =>
-      await _db.collection('settings').doc('profile').set({'photoUrl': url});
+  static Future<String?> setProfilePhoto(String url) async {
+    try { await _db.collection('settings').doc('profile').set({'photoUrl': url}); return null; }
+    catch (e) { return e.toString(); }
+  }
 
   // ─── SKILLS ──────────────────────────────────────────────────
   static Stream<List<SkillEntry>> skillsStream() => _db
@@ -33,11 +39,15 @@ class FirebaseService {
       .snapshots()
       .map((s) => s.docs.map(SkillEntry.fromDoc).toList());
 
-  static Future<void> addSkill(SkillEntry s) async =>
-      await _db.collection('skills').add(s.toMap());
+  static Future<String?> addSkill(SkillEntry s) async {
+    try { await _db.collection('skills').add(s.toMap()); return null; }
+    catch (e) { return e.toString(); }
+  }
 
-  static Future<void> removeSkill(String id) async =>
-      await _db.collection('skills').doc(id).delete();
+  static Future<String?> removeSkill(String id) async {
+    try { await _db.collection('skills').doc(id).delete(); return null; }
+    catch (e) { return e.toString(); }
+  }
 
   // ─── CERTIFICATES ─────────────────────────────────────────────
   static Stream<List<CertEntry>> certsStream() => _db
@@ -46,11 +56,15 @@ class FirebaseService {
       .snapshots()
       .map((s) => s.docs.map(CertEntry.fromDoc).toList());
 
-  static Future<void> addCert(CertEntry c) async =>
-      await _db.collection('certificates').add(c.toMap());
+  static Future<String?> addCert(CertEntry c) async {
+    try { await _db.collection('certificates').add(c.toMap()); return null; }
+    catch (e) { return e.toString(); }
+  }
 
-  static Future<void> removeCert(String id) async =>
-      await _db.collection('certificates').doc(id).delete();
+  static Future<String?> removeCert(String id) async {
+    try { await _db.collection('certificates').doc(id).delete(); return null; }
+    catch (e) { return e.toString(); }
+  }
 
   // ─── PROJECTS ────────────────────────────────────────────────
   static Stream<List<ProjectEntry>> projectsStream() => _db
@@ -59,11 +73,15 @@ class FirebaseService {
       .snapshots()
       .map((s) => s.docs.map(ProjectEntry.fromDoc).toList());
 
-  static Future<void> addProject(ProjectEntry p) async =>
-      await _db.collection('projects').add(p.toMap());
+  static Future<String?> addProject(ProjectEntry p) async {
+    try { await _db.collection('projects').add(p.toMap()); return null; }
+    catch (e) { return e.toString(); }
+  }
 
-  static Future<void> removeProject(String id) async =>
-      await _db.collection('projects').doc(id).delete();
+  static Future<String?> removeProject(String id) async {
+    try { await _db.collection('projects').doc(id).delete(); return null; }
+    catch (e) { return e.toString(); }
+  }
 
   // ─── CONTACT ─────────────────────────────────────────────────
   static Stream<ContactData> contactStream() => _db
@@ -75,8 +93,10 @@ class FirebaseService {
         return ContactData.fromMap(s.data()!);
       });
 
-  static Future<void> updateContact(ContactData c) async =>
-      await _db.collection('settings').doc('contact').set(c.toMap());
+  static Future<String?> updateContact(ContactData c) async {
+    try { await _db.collection('settings').doc('contact').set(c.toMap()); return null; }
+    catch (e) { return e.toString(); }
+  }
 }
 
 // ─── MODELS ──────────────────────────────────────────────────────

@@ -83,8 +83,8 @@ class _AdminShell extends StatefulWidget {
 }
 class _AdminShellState extends State<_AdminShell> {
   int _tab = 0;
-  final _tabs = ['Photos', 'Profile', 'Skills', 'Certs', 'Projects', 'Hobbies', 'Contact', 'Messages'];
-  final _icons = [Icons.photo_library_outlined, Icons.person_outline, Icons.bolt_outlined, Icons.workspace_premium_outlined, Icons.code_outlined, Icons.favorite_outline, Icons.mail_outline, Icons.inbox_outlined];
+  final _tabs = ['Photos', 'Profile', 'Skills', 'Certs', 'Projects', 'Hobbies', 'Contact'];
+  final _icons = [Icons.photo_library_outlined, Icons.person_outline, Icons.bolt_outlined, Icons.workspace_premium_outlined, Icons.code_outlined, Icons.favorite_outline, Icons.mail_outline];
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -133,7 +133,6 @@ class _AdminShellState extends State<_AdminShell> {
         4 => const _ProjectsTab(),
         5 => const _HobbiesTab(),
         6 => const _ContactTab(),
-        7 => const _MessagesTab(),
         _ => const SizedBox(),
       }),
     ]),
@@ -370,7 +369,7 @@ class _CertsTabState extends State<_CertsTab> {
   final _nameCtrl = TextEditingController();
   String _issuer = 'MMCL';
   final _customCtrl = TextEditingController();
-  Uint8List? _pdfBytes; String? _pdfFileName;
+  Uint8List? _imgBytes; String? _imgFileName;
   bool _saving = false;
   CertEntry? _editing;
 
@@ -378,14 +377,17 @@ class _CertsTabState extends State<_CertsTab> {
     content: Text(msg, style: const TextStyle(color: AppTheme.white)), backgroundColor: AppTheme.surface, behavior: SnackBarBehavior.floating,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: BorderSide(color: isError ? const Color(0xFFFF5555) : AppTheme.border))));
 
-  Future<void> _pickPdf() async {
-    final r = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf'], withData: true, allowMultiple: false);
+  Future<void> _pickImage() async {
+    final r = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png'],
+      withData: true, allowMultiple: false);
     if (r == null || r.files.isEmpty) return;
     final f = r.files.first;
     if (f.bytes == null) return;
-    if (f.size > 10*1024*1024) { _snack('PDF exceeds 10MB.', isError: true); return; }
-    setState(() { _pdfBytes = f.bytes; _pdfFileName = f.name; });
-    _snack('PDF selected: ${f.name}');
+    if (f.size > 10*1024*1024) { _snack('File exceeds 10MB.', isError: true); return; }
+    setState(() { _imgBytes = f.bytes; _imgFileName = f.name; });
+    _snack('Image selected: ${f.name}');
   }
 
   Future<void> _save() async {
@@ -393,10 +395,10 @@ class _CertsTabState extends State<_CertsTab> {
     if (name.isEmpty) { _snack('Enter a certificate name.', isError: true); return; }
     setState(() => _saving = true);
     String? imageUrl = _editing?.imageUrl;
-    if (_pdfBytes != null && _pdfFileName != null) {
-      _snack('Uploading PDF…');
-      final res = await CloudinaryService.uploadCertificatePdf(bytes: _pdfBytes!, fileName: _pdfFileName!);
-      if (!res.success) { setState(() => _saving = false); _snack('PDF upload failed: ${res.error}', isError: true); return; }
+    if (_imgBytes != null && _imgFileName != null) {
+      _snack('Uploading image…');
+      final res = await CloudinaryService.uploadCertificateImage(bytes: _imgBytes!, fileName: _imgFileName!);
+      if (!res.success) { setState(() => _saving = false); _snack('Image upload failed: ${res.error}', isError: true); return; }
       imageUrl = res.url;
     }
     final issuer = _issuer == 'New' ? (_customCtrl.text.trim().isEmpty ? 'Other' : _customCtrl.text.trim()) : _issuer;
@@ -406,10 +408,10 @@ class _CertsTabState extends State<_CertsTab> {
       if (err == null) { setState(() => _editing = null); _snack('Certificate updated!'); }
     } else {
       err = await FirebaseService.addCert(CertEntry(name: name, issuer: issuer, imageUrl: imageUrl));
-      if (err == null) _snack('Certificate added!${imageUrl != null ? ' (with PDF)' : ''}');
+      if (err == null) _snack('Certificate added!${imageUrl != null ? ' (with image)' : ''}');
     }
     if (err != null) _snack('Error: $err', isError: true);
-    setState(() { _saving = false; _pdfBytes = null; _pdfFileName = null; });
+    setState(() { _saving = false; _imgBytes = null; _imgFileName = null; });
     _nameCtrl.clear(); _customCtrl.clear();
   }
 
@@ -425,7 +427,7 @@ class _CertsTabState extends State<_CertsTab> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
     return SingleChildScrollView(padding: EdgeInsets.all(isMobile ? 20 : 32), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _SectionTitle(title: _editing != null ? 'Edit Certificate' : 'Add Certificate', sub: 'Attach a PDF to make it viewable on the portfolio'),
+      _SectionTitle(title: _editing != null ? 'Edit Certificate' : 'Add Certificate', sub: 'Upload a JPG/PNG image of your certificate to make it viewable'),
       if (_editing != null) _EditingBanner(label: 'Editing: ${_editing!.name}', onCancel: () { setState(() => _editing = null); _nameCtrl.clear(); _customCtrl.clear(); }),
       const SizedBox(height: 16),
       const _FieldLabel('Certificate Name'),
@@ -435,24 +437,24 @@ class _CertsTabState extends State<_CertsTab> {
       Wrap(spacing: 8, runSpacing: 8, children: ['MMCL','Coursera','New'].map((s) => _ChoiceChip(label: s == 'New' ? '+ New Section' : s, selected: _issuer == s, onTap: () => setState(() => _issuer = s))).toList()),
       if (_issuer == 'New') ...[const SizedBox(height: 10), _StyledTextField(controller: _customCtrl, hint: 'Section name (e.g. Google)')],
       const SizedBox(height: 14),
-      const _FieldLabel('Certificate PDF (Optional)'),
+      const _FieldLabel('Certificate Image (Optional — JPG or PNG)'),
       Row(children: [
         Material(color: Colors.transparent, borderRadius: BorderRadius.circular(4),
-          child: InkWell(onTap: _pickPdf, borderRadius: BorderRadius.circular(4),
+          child: InkWell(onTap: _pickImage, borderRadius: BorderRadius.circular(4),
             child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              decoration: BoxDecoration(border: Border.all(color: _pdfBytes != null ? const Color(0xFF4ADE80) : AppTheme.border), borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(border: Border.all(color: _imgBytes != null ? const Color(0xFF4ADE80) : AppTheme.border), borderRadius: BorderRadius.circular(4)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(_pdfBytes != null ? Icons.picture_as_pdf : Icons.upload_file_outlined, size: 15, color: _pdfBytes != null ? const Color(0xFF4ADE80) : AppTheme.grey),
+                Icon(_imgBytes != null ? Icons.image_outlined : Icons.upload_file_outlined, size: 15, color: _imgBytes != null ? const Color(0xFF4ADE80) : AppTheme.grey),
                 const SizedBox(width: 7),
-                Text(_pdfBytes != null ? (_pdfFileName ?? 'PDF selected') : 'Choose PDF', style: TextStyle(fontSize: 13, color: _pdfBytes != null ? const Color(0xFF4ADE80) : AppTheme.grey)),
+                Text(_imgBytes != null ? (_imgFileName ?? 'Image selected') : 'Choose Image (JPG / PNG)', style: TextStyle(fontSize: 13, color: _imgBytes != null ? const Color(0xFF4ADE80) : AppTheme.grey)),
               ])))),
-        if (_pdfBytes != null) ...[const SizedBox(width: 8),
-          IconButton(onPressed: () => setState(() { _pdfBytes = null; _pdfFileName = null; }), icon: const Icon(Icons.close, size: 16, color: AppTheme.greyDark))],
-        if (_editing?.hasImage == true && _pdfBytes == null) ...[const SizedBox(width: 8),
-          const Text('Current PDF kept', style: TextStyle(fontSize: 11, color: Color(0xFF4ADE80)))],
+        if (_imgBytes != null) ...[const SizedBox(width: 8),
+          IconButton(onPressed: () => setState(() { _imgBytes = null; _imgFileName = null; }), icon: const Icon(Icons.close, size: 16, color: AppTheme.greyDark))],
+        if (_editing?.hasImage == true && _imgBytes == null) ...[const SizedBox(width: 8),
+          const Text('Current image kept', style: TextStyle(fontSize: 11, color: Color(0xFF4ADE80)))],
       ]),
       const SizedBox(height: 6),
-      const Text('PDF auto-converts to image. Max 10MB.', style: TextStyle(fontSize: 11, color: AppTheme.greyDark)),
+      const Text('Upload a photo or scan of your certificate. Stored in portfolio/certificates folder. Max 10MB.', style: TextStyle(fontSize: 11, color: AppTheme.greyDark)),
       const SizedBox(height: 20),
       _SaveButton(label: _editing != null ? 'Update Certificate' : 'Add Certificate', loading: _saving, onTap: _saving ? null : _save),
       const SizedBox(height: 40),

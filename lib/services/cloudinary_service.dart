@@ -10,9 +10,13 @@ class CloudinaryService {
   static const String profileUploadPreset = 'portfolio_profile';
   static const String folder = 'portfolio/photography';
   static const String profileFolder = 'portfolio/profile';
+  static const String certificateFolder = 'portfolio/certificates';
 
   static String get uploadUrl =>
       'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+
+  static String get certificateUploadUrl =>
+      'https://api.cloudinary.com/v1_1/$cloudName/raw/upload';
 
   static String getThumbnailUrl(String publicId, {int width = 600}) =>
       'https://res.cloudinary.com/$cloudName/image/upload'
@@ -61,7 +65,50 @@ class CloudinaryService {
         uploadedAt: DateTime.now(),
       ));
 
-      return CloudinaryUploadResult(success: true, url: url, publicId: publicId);
+      return CloudinaryUploadResult(
+          success: true, url: url, publicId: publicId);
+    } catch (e) {
+      return CloudinaryUploadResult(success: false, error: e.toString());
+    }
+  }
+
+  /// Upload certificate PDF → returns URL (saved to Firestore by caller)
+  static Future<CloudinaryUploadResult> uploadCertificatePdf({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    try {
+      final request =
+          http.MultipartRequest('POST', Uri.parse(certificateUploadUrl));
+      request.fields['upload_preset'] = uploadPreset;
+      request.fields['folder'] = certificateFolder;
+      request.fields['resource_type'] = 'raw';
+      request.files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: fileName),
+      );
+
+      final streamed =
+          await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamed)
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return CloudinaryUploadResult(
+          success: true,
+          url: data['secure_url'],
+          publicId: data['public_id'],
+        );
+      }
+
+      String msg = 'Upload failed (${response.statusCode})';
+      try {
+        msg = jsonDecode(response.body)['error']?['message'] ?? msg;
+      } catch (_) {}
+      return CloudinaryUploadResult(success: false, error: msg);
+    } on TimeoutException {
+      return CloudinaryUploadResult(
+          success: false, error: 'Upload timed out. Try a smaller PDF.');
     } catch (e) {
       return CloudinaryUploadResult(success: false, error: e.toString());
     }
@@ -81,8 +128,8 @@ class CloudinaryService {
         http.MultipartFile.fromBytes('file', bytes, filename: fileName),
       );
 
-      final streamed = await request.send()
-          .timeout(const Duration(seconds: 30));
+      final streamed =
+          await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamed)
           .timeout(const Duration(seconds: 30));
 
@@ -101,7 +148,8 @@ class CloudinaryService {
       } catch (_) {}
       return CloudinaryUploadResult(success: false, error: msg);
     } on TimeoutException {
-      return CloudinaryUploadResult(success: false, error: 'Upload timed out. Try a smaller image.');
+      return CloudinaryUploadResult(
+          success: false, error: 'Upload timed out. Try a smaller image.');
     } catch (e) {
       return CloudinaryUploadResult(success: false, error: e.toString());
     }

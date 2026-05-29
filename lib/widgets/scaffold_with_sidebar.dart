@@ -26,6 +26,7 @@ class _ScaffoldWithSidebarState extends State<ScaffoldWithSidebar>
     _NavItem('Skills', '/skills', Icons.bolt_outlined),
     _NavItem('Certificates', '/certificates', Icons.workspace_premium_outlined),
     _NavItem('Hobbies', '/hobbies', Icons.favorite_outline),
+    _NavItem('FAQs', '/faqs', Icons.quiz_outlined),
     _NavItem('Contact', '/contact', Icons.mail_outline),
   ];
 
@@ -75,43 +76,59 @@ class _ScaffoldWithSidebarState extends State<ScaffoldWithSidebar>
       backgroundColor: AppTheme.black,
       body: Stack(
         children: [
-          // Main content
           Column(
             children: [
-              _TopBar(onMenuTap: _toggleSidebar, isOpen: _sidebarOpen),
+              _TopBar(
+                navItems: _navItems,
+                currentLocation: location,
+                onMenuTap: _toggleSidebar,
+                isOpen: _sidebarOpen,
+                isMobile: isMobile,
+                onNavTap: (path) => context.go(path),
+              ),
               Expanded(child: widget.child),
             ],
           ),
-
-          // Overlay
-          if (_sidebarOpen)
+          if (isMobile && _sidebarOpen)
             AnimatedBuilder(
               animation: _fadeAnim,
               builder: (_, __) => GestureDetector(
                 onTap: _closeSidebar,
                 child: Container(
-                  color: Colors.black.withOpacity(0.6 * _fadeAnim.value),
+                    color: Colors.black.withOpacity(0.45 * _fadeAnim.value)),
+              ),
+            ),
+          if (isMobile && _sidebarOpen)
+            Positioned(
+              top: 64,
+              left: 0,
+              right: 0,
+              child: AnimatedBuilder(
+                animation: _slideAnim,
+                builder: (_, __) => Transform.translate(
+                  offset: Offset(0, _slideAnim.value * -12),
+                  child: Opacity(
+                    opacity: _fadeAnim.value,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        border: Border.all(color: AppTheme.border),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: _MobileNavPane(
+                        navItems: _navItems,
+                        currentLocation: location,
+                        onItemTap: (path) {
+                          context.go(path);
+                          _closeSidebar();
+                        },
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-
-          // Sidebar drawer
-          AnimatedBuilder(
-            animation: _slideAnim,
-            builder: (_, __) => Transform.translate(
-              offset: Offset(_slideAnim.value * (isMobile ? 280 : 320), 0),
-              child: _SidebarDrawer(
-                navItems: _navItems,
-                currentLocation: location,
-                onItemTap: (path) {
-                  context.go(path);
-                  _closeSidebar();
-                },
-                onClose: _closeSidebar,
-                width: isMobile ? 280 : 320,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -119,10 +136,21 @@ class _ScaffoldWithSidebarState extends State<ScaffoldWithSidebar>
 }
 
 class _TopBar extends StatelessWidget {
+  final List<_NavItem> navItems;
+  final String currentLocation;
   final VoidCallback onMenuTap;
   final bool isOpen;
+  final bool isMobile;
+  final void Function(String) onNavTap;
 
-  const _TopBar({required this.onMenuTap, required this.isOpen});
+  const _TopBar({
+    required this.navItems,
+    required this.currentLocation,
+    required this.onMenuTap,
+    required this.isOpen,
+    required this.isMobile,
+    required this.onNavTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -167,19 +195,57 @@ class _TopBar extends StatelessWidget {
             ),
           ),
 
-          // Hamburger
-          GestureDetector(
-            onTap: onMenuTap,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                isOpen ? Icons.close : Icons.menu,
-                key: ValueKey(isOpen),
-                color: AppTheme.white,
-                size: 24,
+          if (isMobile)
+            GestureDetector(
+              onTap: onMenuTap,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  isOpen ? Icons.close : Icons.menu,
+                  key: ValueKey(isOpen),
+                  color: AppTheme.white,
+                  size: 24,
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: navItems.map((item) {
+                    final isActive = currentLocation == item.path ||
+                        (item.path != '/' &&
+                            currentLocation.startsWith(item.path));
+                    return GestureDetector(
+                      onTap: () => onNavTap(item.path),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? AppTheme.white.withOpacity(0.08)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                              color: isActive
+                                  ? AppTheme.white.withOpacity(0.12)
+                                  : AppTheme.border),
+                        ),
+                        child: Text(item.label,
+                            style: TextStyle(
+                                fontSize: 11,
+                                color:
+                                    isActive ? AppTheme.white : AppTheme.grey,
+                                letterSpacing: 0.4)),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -274,17 +340,68 @@ class _SidebarDrawer extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  '© 2025 Adriel Araos',
+                  '© 2026 Adriel Araos. Flutter + Firebase portfolio.',
                   style: TextStyle(
                     fontSize: 11,
                     color: AppTheme.greyDark,
-                    letterSpacing: 1,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MobileNavPane extends StatelessWidget {
+  final List<_NavItem> navItems;
+  final String currentLocation;
+  final void Function(String) onItemTap;
+
+  const _MobileNavPane(
+      {required this.navItems,
+      required this.currentLocation,
+      required this.onItemTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: navItems.map((item) {
+          final isActive = currentLocation == item.path ||
+              (item.path != '/' && currentLocation.startsWith(item.path));
+          return GestureDetector(
+            onTap: () => onItemTap(item.path),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? AppTheme.white.withOpacity(0.08)
+                    : AppTheme.black,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: isActive
+                        ? AppTheme.white.withOpacity(0.12)
+                        : AppTheme.border),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(item.icon,
+                    size: 16, color: isActive ? AppTheme.white : AppTheme.grey),
+                const SizedBox(width: 8),
+                Text(item.label,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: isActive ? AppTheme.white : AppTheme.grey)),
+              ]),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -346,9 +463,8 @@ class _NavTileState extends State<_NavTile> {
                 style: TextStyle(
                   fontFamily: 'SpaceGrotesk',
                   fontSize: 14,
-                  fontWeight: widget.isActive
-                      ? FontWeight.w600
-                      : FontWeight.w400,
+                  fontWeight:
+                      widget.isActive ? FontWeight.w600 : FontWeight.w400,
                   color: widget.isActive ? AppTheme.white : AppTheme.grey,
                   letterSpacing: 0.3,
                 ),

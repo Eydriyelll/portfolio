@@ -11,6 +11,7 @@ import 'pages/skills_page.dart';
 import 'pages/certificates_page.dart';
 import 'pages/hobbies_page.dart';
 import 'pages/contact_page.dart';
+import 'pages/faqs_page.dart';
 import 'pages/admin_page.dart';
 import 'widgets/scaffold_with_sidebar.dart';
 
@@ -30,11 +31,14 @@ final _router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (c, s) => const HomePage()),
         GoRoute(path: '/about', builder: (c, s) => const AboutPage()),
-        GoRoute(path: '/photography', builder: (c, s) => const PhotographyPage()),
+        GoRoute(
+            path: '/photography', builder: (c, s) => const PhotographyPage()),
         GoRoute(path: '/projects', builder: (c, s) => const ProjectsPage()),
         GoRoute(path: '/skills', builder: (c, s) => const SkillsPage()),
-        GoRoute(path: '/certificates', builder: (c, s) => const CertificatesPage()),
+        GoRoute(
+            path: '/certificates', builder: (c, s) => const CertificatesPage()),
         GoRoute(path: '/hobbies', builder: (c, s) => const HobbiesPage()),
+        GoRoute(path: '/faqs', builder: (c, s) => const FaqsPage()),
         GoRoute(path: '/contact', builder: (c, s) => const ContactPage()),
       ],
     ),

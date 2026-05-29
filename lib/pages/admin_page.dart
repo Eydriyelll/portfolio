@@ -922,7 +922,7 @@ class _CertsTabState extends State<_CertsTab> {
           ]),
           const SizedBox(height: 6),
           const Text(
-              'Upload a photo or scan of your certificate. Stored in portfolio/certificates folder. Max 10MB.',
+              'Upload a photo or scan of your certificate. Stored in the dedicated portfolio-certs folder. Max 10MB.',
               style: TextStyle(fontSize: 11, color: AppTheme.greyDark)),
           const SizedBox(height: 20),
           _SaveButton(
